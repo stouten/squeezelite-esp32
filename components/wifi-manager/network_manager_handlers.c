@@ -1047,6 +1047,21 @@ static state_machine_result_t WIFI_LOST_CONNECTION_STATE_entry_handler(state_mac
     } else {
         /* In this scenario the connection was lost beyond repair */
         nm->retries = 0;
+        /* Optionally restart the wifi driver (not the device) to recover from
+         * a wedged driver state. Keeps telnet/messages buffers intact.
+         * Configure with the "wifi_restart" configuration key (0 = disabled). */
+        uint16_t wifi_restart = 1;
+        config_get_uint16t_from_str("wifi_restart", &wifi_restart, 1);
+        if (wifi_restart) {
+            ESP_LOGW(TAG, "Restarting wifi driver after failed retries.");
+            esp_wifi_stop();
+            network_wifi_start();
+            network_async(EN_CONNECT);
+            nm->retries = 1;
+            NETWORK_EXECUTE_CB(State_Machine);
+            network_handler_entry_print(State_Machine,false);
+            return EVENT_HANDLED;
+        }
         ESP_LOGD(TAG,"Checking if ethernet interface is connected");
         if (network_is_interface_connected(nm->eth_netif)) {
             ESP_LOGW(TAG, "Cannot connect to Wifi. Falling back to Ethernet ");
