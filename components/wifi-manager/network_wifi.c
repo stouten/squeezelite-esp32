@@ -474,6 +474,17 @@ esp_netif_t* network_wifi_get_interface() {
 esp_netif_t* network_wifi_get_ap_interface() {
     return wifi_ap_netif;
 }
+static esp_err_t network_wifi_sta_set_ps() {
+    wifi_ps_type_t sta_power_save = DEFAULT_STA_POWER_SAVE;
+    char* value = config_alloc_get_default(NVS_TYPE_STR, "wifi_ps", "1", 0);
+    if (value != NULL) {
+        if (atoi(value) == 0) sta_power_save = WIFI_PS_NONE;
+        FREE_AND_NULL(value);
+    }
+    ESP_LOGD(TAG, "Setting wifi power save (%d)", sta_power_save);
+    return esp_wifi_set_ps(sta_power_save);
+}
+
 esp_err_t network_wifi_set_sta_mode() {
     if (!wifi_netif) {
         ESP_LOGE(TAG, "Wifi not initialized. Cannot set sta mode");
@@ -489,6 +500,9 @@ esp_err_t network_wifi_set_sta_mode() {
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Error starting wifi: %s", esp_err_to_name(err));
         }
+    }
+    if (err == ESP_OK) {
+        err = network_wifi_sta_set_ps();
     }
     return err;
 }
@@ -951,15 +965,7 @@ esp_netif_t* network_wifi_config_ap() {
     }
 
     msg = "Setting wifi power save";
-    wifi_ps_type_t sta_power_save = DEFAULT_STA_POWER_SAVE;
-    value = config_alloc_get_default(NVS_TYPE_STR, "wifi_ps", "1", 0);
-    if (value != NULL) {
-        if (atoi(value) == 0) sta_power_save = WIFI_PS_NONE;
-        FREE_AND_NULL(value);
-    }
-    ESP_LOGD(TAG, "%s (%d)", msg, sta_power_save);
-
-    if ((err = esp_wifi_set_ps(sta_power_save)) != ESP_OK) /* stop AP DHCP server */
+    if ((err = network_wifi_sta_set_ps()) != ESP_OK) /* stop AP DHCP server */
     {
         ESP_LOGE(TAG, "%s failed. Error %s", msg, esp_err_to_name(err));
         return wifi_ap_netif;
