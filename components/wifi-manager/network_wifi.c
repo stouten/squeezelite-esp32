@@ -951,9 +951,15 @@ esp_netif_t* network_wifi_config_ap() {
     }
 
     msg = "Setting wifi power save";
-    ESP_LOGD(TAG, "%s (%d)", msg, DEFAULT_STA_POWER_SAVE);
+    wifi_ps_type_t sta_power_save = DEFAULT_STA_POWER_SAVE;
+    char* value = config_alloc_get_default(NVS_TYPE_STR, "wifi_ps", "1", 0);
+    if (value != NULL) {
+        if (atoi(value) == 0) sta_power_save = WIFI_PS_NONE;
+        FREE_AND_NULL(value);
+    }
+    ESP_LOGD(TAG, "%s (%d)", msg, sta_power_save);
 
-    if ((err = esp_wifi_set_ps(DEFAULT_STA_POWER_SAVE)) != ESP_OK) /* stop AP DHCP server */
+    if ((err = esp_wifi_set_ps(sta_power_save)) != ESP_OK) /* stop AP DHCP server */
     {
         ESP_LOGE(TAG, "%s failed. Error %s", msg, esp_err_to_name(err));
         return wifi_ap_netif;

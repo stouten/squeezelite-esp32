@@ -12,6 +12,14 @@ menu "Network Manager Configuration"
             default 2
             help
             Defines when a connection is lost/attempt to connect is made, how many retries should be made before giving up.
+
+        config WIFI_STA_POWER_SAVE_OFF
+            bool "Disable WiFi power save by default"
+            default n
+            help
+            When enabled, the STA power save mode defaults to WIFI_PS_NONE (wifi modem always on)
+            instead of WIFI_PS_MIN_MODEM. This can improve connection stability with routers
+            that drop power-saving clients, at the cost of slightly higher power consumption.
             
         config DEFAULT_AP_SSID
             string "Access Point SSID"

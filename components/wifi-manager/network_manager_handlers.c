@@ -1038,7 +1038,9 @@ static state_machine_result_t WIFI_LOST_CONNECTION_STATE_entry_handler(state_mac
     nm->last_connected = 0;
     nm->num_disconnect++;
     ESP_LOGW(TAG, " Wifi disconnected. Number of disconnects: %d, Average time connected: %d", nm->num_disconnect, nm->num_disconnect > 0 ? (nm->total_connected_time / nm->num_disconnect) : 0);
-    if (nm->retries < WIFI_MANAGER_MAX_RETRY) {
+    uint16_t max_retry = WIFI_MANAGER_MAX_RETRY;
+    config_get_uint16t_from_str("wifi_retry", &max_retry, WIFI_MANAGER_MAX_RETRY);
+    if (nm->retries < max_retry) {
         nm->retries++;
         ESP_LOGD(TAG, " Retrying connection connection, %d/%d.", nm->retries, WIFI_MANAGER_MAX_RETRY);
         network_async(EN_CONNECT);
